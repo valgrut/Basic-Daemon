@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# Daemon Name: basic_daemon
+# 
+# chkconfig: - 58 74
+# description: Tento script ma na starosti kontrolu nad nasim daemonem:
+
+#Spusteni:
+# /etc/init.d/program start|stop|restart|status
+
+#includes:
+#source function library
+#./etc/init.d/functions
+
+#source networking library
+#./etc/sysconfig/myconfig
+
+#variable declaration
+prog=basic_daemon
+lockfile=/var/sysconfig/myconfig
+
+start() 
+{
+	#overeni pozadavku ke spusteni
+	[ "$NETWORKING" = "no" ] && exit 1
+	[ -x /usr/sbin/$prog ] || exit 5
+
+	#start 
+	echo -n $"starting $prog: "
+	daemon --pidfile /var/run/${proc}.pid $prog
+	RETVAL=$?
+	echo
+
+	#pokud vse slo dobre, aktualizujeme (touch) lock file
+	[ $RETVAL -eq 0 ] && touch $lockfile
+	return $RETVAL
+}
+
+stop() 
+{
+	echo -n "Shutting down $prog: "
+	killproc $prog
+	RETVAL=$?
+	echo
+
+	#pokud vse slo dobre, smaz lockfile
+	[ $RETVAL -eq 0 ] && rm -f $lockfile
+	return $RETVAL	
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	status)
+		status $prog
+		;;
+	restart)
+		stop
+		start
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|status|restart}"
+		exit 2
+esac
